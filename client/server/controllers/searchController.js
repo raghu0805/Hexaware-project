@@ -1,59 +1,61 @@
-import use from '@tensorflow-models/universal-sentence-encoder';
-import tf from '@tensorflow/tfjs';
-import pool from '../db.js';
-// const pool = require('./db'); // PostgreSQL pool connection
-let model = null;
+import pool from "../db.js";
+import { cosineSimilarity } from "../utils/similarity.js";
 
-// Load the model only once
-const loadModel = async () => {
-  if (!model) {
-    model = await use.load();
+export default async function search(req, res) {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({ error: "No query provided" });
   }
-};
 
-// Function to get embeddings
-const getQueryEmbedding = async (query) => {
-  await loadModel();
-  const embeddings = await model.embed([query]);
-  return embeddings.arraySync()[0];
-};
-
-// Cosine similarity
-const cosineSimilarity = (vec1, vec2) => {
-  const dotProduct = vec1.reduce((sum, val, i) => sum + val * vec2[i], 0);
-  const norm1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0));
-  const norm2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (norm1 * norm2);
-};
-
- const search = async (req, res) => {
   try {
-    const { query } = req.body;
-    const queryLower = query.toLowerCase();
+    // Fetch all users with embeddings
+    const result = await pool.query("SELECT * FROM user_details WHERE embedding IS NOT NULL");
+    const users = result.rows;
 
-    // Try exact name/email match
-    const exactMatch = await pool.query(
-      "SELECT * FROM user_details WHERE LOWER(name) = $1 OR LOWER(email) = $1",
-      [queryLower]
-    );
-    if (exactMatch.rows.length > 0) {
-      return res.json({ results: exactMatch.rows });
+    if (users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
     }
 
-    // Else, perform semantic embedding search
-    const queryEmbedding = await getQueryEmbedding(query);
-
-    const users = await pool.query("SELECT * FROM user_details");
-    const ranked = users.rows.map((user) => {
-      const similarity = cosineSimilarity(queryEmbedding, user.embedding);
-      return { ...user, similarity };
+    // Generate embedding for the HR's query
+    const embeddingRes = await fetch("http://localhost:11434/api/embeddings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "nomic-embed-text",
+        prompt: query,
+      }),
     });
 
-    const sorted = ranked.sort((a, b) => b.similarity - a.similarity);
-    res.json({ results: sorted.slice(0, 5) }); // top 5 results
+    const embeddingData = await embeddingRes.json();
+
+    if (!embeddingData || !embeddingData.embedding) {
+      console.error("Embedding response:", embeddingData);
+      return res.status(500).json({ error: "Search failed", details: "Invalid embedding response" });
+    }
+
+    const queryEmbedding = embeddingData.embedding;
+
+    // Score users
+    const scoredUsers = users.map(user => ({
+      ...user,
+      similarity: cosineSimilarity(queryEmbedding, user.embedding)
+    }));
+
+    // ✅ Apply threshold filter
+    const threshold = 0.6;
+    const filteredUsers = scoredUsers.filter(user => user.similarity >= threshold);
+
+    // Sort by similarity
+    filteredUsers.sort((a, b) => b.similarity - a.similarity);
+
+    if (filteredUsers.length === 0) {
+      return res.status(404).json({ message: "No strong matches found" });
+    }
+
+    return res.json(filteredUsers.slice(0, 5)); // Top 5 matches above threshold
+
   } catch (err) {
-    console.error("Search error:", err);
-    res.status(500).json({ error: "Search failed" });
+    console.error("Search error:", err.stack);
+    res.status(500).json({ error: "Search failed", details: err.message });
   }
-};
-export default search;
+}
