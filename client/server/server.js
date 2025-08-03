@@ -3,20 +3,17 @@ import cors from 'cors';
 import multer from 'multer';
 import { execFile } from 'child_process';
 import fs from 'fs';
-import { Client } from 'pg';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import searchRoutes from './routes/search.js'
 // ✅ Use shared connection pool
 import pool from './db.js'; // or wherever your pool.js file is
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cors({
   origin: 'http://localhost:5173', // your frontend port
   credentials: true
@@ -28,24 +25,29 @@ app.use((req, res, next) => {
   next();
 });
 // app.use("/api", searchRoutes);
-
 app.use("/", searchRoutes);
-
-
-
 let currentUserId = null; // Store current user ID in memory
-
+app.post('/consultant-login', async (req, res) => {
+  const { email, password } = req.body;
+  // Use your DB query logic here
+  const result = await pool.query("SELECT * FROM user_details WHERE email = $1 AND password = $2", [email, password]);
+  if (result.rows.length > 0) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, message: "Wrong email or password" });
+  }
+});
 // Registration endpoint
 app.post('/register', async (req, res) => {
-  const { name, email, phone } = req.body;
+  console.log(req.body)
+  const { name, email, phone, password } = req.body;
   const countRes = await pool.query("SELECT COUNT(*) FROM user_details");
   let totalUsers = parseInt(countRes.rows[0].count) + 1;
   currentUserId = `Consultant${100 + totalUsers}`;
-
   try {
     await pool.query(
-      "INSERT INTO user_details (name, email, phone, user_id) VALUES ($1, $2, $3, $4)",
-      [name, email, phone, currentUserId]
+      "INSERT INTO user_details (name, email, phone, user_id,password) VALUES ($1, $2, $3, $4,$5)",
+      [name, email, phone, currentUserId, password]
     );
     console.log("User Registered:", currentUserId);
     res.json({ message: "Registered Successfully", user_id: currentUserId });
@@ -54,13 +56,11 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: "Failed to register user" });
   }
 });
-
 // Send registered user data to frontend
 app.get("/api/user", async (req, res) => {
   const result = await pool.query("SELECT * FROM user_details WHERE user_id = $1", [currentUserId]);
   res.json(result.rows);
 });
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -80,10 +80,10 @@ const upload = multer({ storage }); // ✅ Use your custom storage
 // Resume upload and processing
 app.post("/upload", upload.single("resume"), (req, res) => {
   // const resumePath = path.join(__dirname, req.file.path);
-const uploadedFileName = req.file.filename; // This includes the extension like .pdf
-const resumePath = path.join(__dirname, 'uploads', uploadedFileName);
+  const uploadedFileName = req.file.filename; // This includes the extension like .pdf
+  const resumePath = path.join(__dirname, 'uploads', uploadedFileName);
 
-console.log("Resume path sent to Python:", resumePath); // ✅ Add this
+  console.log("Resume path sent to Python:", resumePath); // ✅ Add this
 
 
   execFile("python3", ["resumeProcessor.py", resumePath], async (error, stdout, stderr) => {
@@ -126,6 +126,42 @@ app.get("/search-by-skill", async (req, res) => {
 
   res.json(result.rows);
 });
+//?api/mark-attendance
+app.post("/api/mark-attendance", async (req, res) => {
+  const { user_id } = req.body;
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+
+  if (hours > 9 || (hours === 9 && minutes > 30)) {
+    return res.status(400).json({ error: "Cannot mark attendance after 9:30 AM" });
+  }
+
+  const date = now.toISOString().split("T")[0];
+
+  try {
+    // Check if already marked
+    const existing = await pool.query(
+      "SELECT * FROM attendance WHERE user_id = $1 AND date = $2",
+      [user_id, date]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: "Attendance already marked for today" });
+    }
+
+    // Insert attendance
+    await pool.query(
+      "INSERT INTO attendance(user_id, date, time) VALUES ($1, $2, $3)",
+      [user_id, date, now.toTimeString().split(" ")[0]]
+    );
+
+    res.json({ message: "Attendance marked successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+});
+
 app.use((req, res, next) => {
   res.status(404).json({ error: "Route not found" });
 });

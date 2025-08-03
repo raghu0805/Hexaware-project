@@ -7,6 +7,7 @@ import ResumeUpload from './Components/ResumeUpload';
 import AdminConsole from './Components/AdminConsole';
 import ConsultantAdmin from './Components/ConsultantAdmin';
 import ResumeUploader from './PracticeResume/ResumeUploader';
+import ConsultantLogin from './Auth/ConsultantLogin';
 
 
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/uploadresume" element={<ResumeUploader/>}/>
           <Route path="/" element={<Role/>}/>
           <Route path="/upload" element={<ResumeUpload/>}/>
+          <Route path="/login" element={<ConsultantLogin/>}/>
           <Route path="/consultant" element={<ConsultantAdmin/>} />
           <Route path="/resumeupload" element={<ResumeUpload/>}/>
           

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import React, { useState } from 'react';
 import { Search, Filter, Download, Users, Activity, AlertTriangle, TrendingUp, Icon } from 'lucide-react';
 // import { mockConsultants, mockAgents } from '../../data/mockData';
@@ -7,10 +8,45 @@ import { Search, Filter, Download, Users, Activity, AlertTriangle, TrendingUp, I
 
 const AdminConsole = () => {
   const [activeTab, setActiveTab] = useState();
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
+  const [consultants, setConsultants] = useState([]);
+const [searchTerm, setSearchTerm] = useState('');
+
+const handleKeyDown = async (e) => {
+  if (e.key === "Enter") {
+    handleSearch();
+  }
+};
+
+const handleSearch = async () => {
+  const query = searchTerm.trim();
+  if (!query) return;
+
+  try {
+    console.log("Query:",query);
+    const res = await fetch("http://localhost:5000/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+
+    const data = await res.json();
+    console.log("Search results:", data.results);
+    setConsultants(data.results); // <- add this to show results
+if (!data || Object.keys(data).length === 0) {
+  setConsultants([]);
+}
+  } catch (err) {
+    console.error("Search failed:", err.message);
+  }
+};
+
+
+useEffect(() => {
+  console.log("Updated Consultants:", consultants);
+}, [consultants]);
 
 
 
@@ -43,7 +79,7 @@ const AdminConsole = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-gray-900">{}</p>
+              <p className="text-2xl font-bold text-gray-900">{ }</p>
             </div>
           </div>
         </div>
@@ -55,7 +91,7 @@ const AdminConsole = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">On Bench</p>
-              <p className="text-2xl font-bold text-gray-900">{}</p>
+              <p className="text-2xl font-bold text-gray-900">{ }</p>
             </div>
           </div>
         </div>
@@ -67,7 +103,7 @@ const AdminConsole = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">In Training</p>
-              <p className="text-2xl font-bold text-gray-900">{}</p>
+              <p className="text-2xl font-bold text-gray-900">{ }</p>
             </div>
           </div>
         </div>
@@ -79,66 +115,110 @@ const AdminConsole = () => {
           <nav className="-mb-px flex space-x-8 px-6">
 
 
-                <button
-                 
-                  onClick={() => setActiveTab()}
-                  className="py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors 
+            <button
+
+              onClick={() => setActiveTab()}
+              className="py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors 
    
                       border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                >
-                  {/* <Icon className="w-4 h-4 mr-2" /> */}
-              
-                </button>
- 
+            >
+              {/* <Icon className="w-4 h-4 mr-2" /> */}
+
+            </button>
+
           </nav>
         </div>
 
         <div className="p-6">
-            <div>
-              {/* Search and Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Search consultants by name, email, or skills..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedDepartment}
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Departments</option>
-                      <option >UI/UX</option>
-                      <option >React</option>
-                      <option >Digital Marketing</option>
-                  </select>
-                  <select
-                  
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Statuses</option>
-                      <option >
-                        
-                      </option>
-                  </select>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </button>
+          <div>
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+<input
+  type="text"
+  placeholder="Search by skill, name, or email"
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  onKeyDown={handleKeyDown}
+  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+/>
+
+
+
+
                 </div>
               </div>
+              <div className="flex gap-2">
+                <select
+                  value={selectedDepartment}
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Departments</option>
+                  <option >UI/UX</option>
+                  <option >React</option>
+                  <option >Digital Marketing</option>
+                </select>
+                <select
 
-              {/* <ConsultantTable /> */}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Statuses</option>
+                  <option >
+
+                  </option>
+                </select>
+         <button
+  onClick={handleSearch}
+  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+>
+  Search
+</button>
+
+
+              </div>
             </div>
+
+            {/* <ConsultantTable /> */}
+            {consultants.length > 0 && (
+              <div className="mt-6">
+                <table className="min-w-full bg-white border rounded-lg overflow-hidden">
+                  <thead className="bg-gray-100 text-gray-700 text-left">
+                    <tr>
+
+                      <th className="px-4 py-2">Consultant ID</th>
+                      <th className="px-4 py-2">Name</th>
+                      <th className="px-4 py-2">Email</th>
+                      <th className="px-4 py-2">Skills</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {consultants.map((user) => (
+                      <tr key={user.id} className="border-t">
+                        
+                        <td className="px-4 py-2">{user.user_id}</td>
+                        <td className="px-4 py-2">{user.name}</td>
+                        <td className="px-4 py-2">{user.email}</td>
+<td className="px-4 py-2">
+  {user.skills
+    ? user.skills
+        .replace(/[{}"]/g, "") // Remove braces and quotes
+        .split(",")
+        .map((skill) => skill.trim())
+        .join(", ")
+    : "N/A"}
+</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+          </div>
 
 
         </div>

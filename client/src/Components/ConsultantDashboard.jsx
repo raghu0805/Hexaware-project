@@ -61,7 +61,9 @@ const ConsultantDashboard= () => {
       {/* Welcome Section */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
+            <div className="w-[400px] flex justify-start ">
+
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
               <User className="w-8 h-8" />
             </div>
@@ -75,9 +77,34 @@ const ConsultantDashboard= () => {
                 </span>
               </div>
             </div>
+            </div>
+            {user && (
+  <button
+    className="mt-4 px-4 py-2 bg-white text-black rounded hover:bg-white/90"
+    onClick={async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/mark-attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user[0].user_id }),
+        });
+        const data = await res.json();
+        if (data.message) alert(data.message);
+        else alert(data.error);
+      } catch (err) {
+        alert("Error marking attendance");
+      }
+    }}
+  >
+    Mark Attendance
+  </button>
+)}
+
           </div>
         </div>
+        
       </div>
+      
       <ResumeUpload/>
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-3">
