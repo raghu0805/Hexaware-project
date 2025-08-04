@@ -11,8 +11,50 @@ const AdminConsole = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
-  const [consultants, setConsultants] = useState([]);
+const [allConsultants, setAllConsultants] = useState([]);
+const [consultants, setConsultants] = useState([]);
+const [activeConsultants, setActiveConsultants] = useState([]);
+
+  const [onBenchCount, setOnBenchCount] = useState(0);
+
 const [searchTerm, setSearchTerm] = useState('');
+
+
+const fetchAllConsultants = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/consultants");
+    const data = await res.json();
+    setAllConsultants(data.results); // For total count
+    setConsultants(data.results);    // For table
+  } catch (err) {
+    console.error("Failed to fetch all consultants:", err);
+  }
+};
+
+const fetchOnBenchConsultants = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/onbench");
+    const data = await res.json();
+    setConsultants(data.results); // Only for table
+    setOnBenchCount(data.results.length);
+  } catch (err) {
+    console.error("Failed to fetch on-bench consultants:", err);
+    setConsultants([]);
+  }
+};
+const fetchActiveConsultants = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/active");
+    const data = await res.json();
+
+    setActiveConsultants(data.results);  // Store for count
+    setConsultants(data.results);        // Show in table
+  } catch (err) {
+    console.error("Failed to fetch active consultants:", err);
+    setActiveConsultants([]);
+    setConsultants([]);
+  }
+};
 
 const handleKeyDown = async (e) => {
   if (e.key === "Enter") {
@@ -25,23 +67,29 @@ const handleSearch = async () => {
   if (!query) return;
 
   try {
-    console.log("Query:",query);
-    const res = await fetch("http://localhost:5000/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
-    });
+    console.log("Query:", query);
+
+const res = await fetch("http://localhost:5000/search", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ query }),
+});
 
     const data = await res.json();
-    console.log("Search results:", data.results);
-    setConsultants(data.results); // <- add this to show results
-if (!data || Object.keys(data).length === 0) {
-  setConsultants([]);
-}
+    console.log("Search results:", data);
+
+    // ✅ Protect against undefined errors
+    if (Array.isArray(data.results)) {
+      setConsultants(data.results);
+    } else {
+      setConsultants([]);
+    }
   } catch (err) {
     console.error("Search failed:", err.message);
+    setConsultants([]); // Show empty if search failed
   }
 };
+
 
 
 useEffect(() => {
@@ -60,38 +108,51 @@ useEffect(() => {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Consultants</p>
-              <p className="text-2xl font-bold text-gray-900"></p>
-            </div>
-          </div>
-        </div>
+<div
+  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer"
+  onClick={fetchAllConsultants}
+>
+  <div className="flex items-center">
+    <div className="p-2 bg-blue-50 rounded-lg">
+      <Users className="w-6 h-6 text-blue-600" />
+    </div>
+    <div className="ml-4">
+      <p className="text-sm font-medium text-gray-600">Total Consultants</p>
+<p className="text-2xl font-bold text-gray-900">
+  {Array.isArray(allConsultants) ? allConsultants.length : 0}
+</p>
+    </div>
+  </div>
+</div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <Activity className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-gray-900">{ }</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div
+  className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer"
+  onClick={fetchActiveConsultants}
+>
+  <div className="flex items-center">
+    <div className="p-2 bg-green-50 rounded-lg">
+      <Activity className="w-6 h-6 text-green-600" />
+    </div>
+    <div className="ml-4">
+      <p className="text-sm font-medium text-gray-600">Active</p>
+      <p className="text-2xl font-bold text-gray-900">
+        {Array.isArray(activeConsultants) ? activeConsultants.length : 0}
+      </p>
+    </div>
+  </div>
+</div>
+
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+        onClick={fetchOnBenchConsultants}>
           <div className="flex items-center">
             <div className="p-2 bg-yellow-50 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">On Bench</p>
-              <p className="text-2xl font-bold text-gray-900">{ }</p>
+<p className="text-2xl font-bold text-gray-900">{onBenchCount}</p>
             </div>
           </div>
         </div>
@@ -186,34 +247,31 @@ useEffect(() => {
             {consultants.length > 0 && (
               <div className="mt-6">
                 <table className="min-w-full bg-white border rounded-lg overflow-hidden">
-                  <thead className="bg-gray-100 text-gray-700 text-left">
-                    <tr>
+                 <thead className="bg-gray-100 text-gray-700 text-left">
+  <tr>
+    <th className="px-4 py-2">S.No</th>
+    <th className="px-4 py-2">Consultant ID</th>
+    <th className="px-4 py-2">Name</th>
+    <th className="px-4 py-2">Email</th>
+    <th className="px-4 py-2">Skills</th>
+  </tr>
+</thead>
+<tbody>
+  {consultants.map((user, index) => (
+    <tr key={user.user_id} className="border-t">
+      <td className="px-4 py-2">{index + 1}</td>
+      <td className="px-4 py-2">{user.user_id}</td>
+      <td className="px-4 py-2">{user.name}</td>
+      <td className="px-4 py-2">{user.email}</td>
+      <td className="px-4 py-2">
+        {user.skills
+          ? user.skills.replace(/[{}"]/g, "").split(",").map(s => s.trim()).join(", ")
+          : "N/A"}
+      </td>
+    </tr>
+  ))}
+</tbody>
 
-                      <th className="px-4 py-2">Consultant ID</th>
-                      <th className="px-4 py-2">Name</th>
-                      <th className="px-4 py-2">Email</th>
-                      <th className="px-4 py-2">Skills</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {consultants.map((user) => (
-                      <tr key={user.id} className="border-t">
-                        
-                        <td className="px-4 py-2">{user.user_id}</td>
-                        <td className="px-4 py-2">{user.name}</td>
-                        <td className="px-4 py-2">{user.email}</td>
-<td className="px-4 py-2">
-  {user.skills
-    ? user.skills
-        .replace(/[{}"]/g, "") // Remove braces and quotes
-        .split(",")
-        .map((skill) => skill.trim())
-        .join(", ")
-    : "N/A"}
-</td>
-                      </tr>
-                    ))}
-                  </tbody>
                 </table>
               </div>
             )}

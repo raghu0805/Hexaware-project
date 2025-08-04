@@ -15,11 +15,10 @@ const PORT = 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: 'http://localhost:5173', // your frontend port
-  credentials: true
+origin: ['http://localhost:5173', 'http://localhost:5174'],  credentials: true
 }));
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5173','http://localhost:5174');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   next();
@@ -126,6 +125,26 @@ app.get("/search-by-skill", async (req, res) => {
 
   res.json(result.rows);
 });
+app.post("/search-by-skill", async (req, res) => {
+  const { query } = req.body; // ✅ Expect `query` from body
+  const skill = query.toLowerCase(); // ✅ Convert to lowercase for LIKE match
+
+  try {
+    const result = await pool.query(
+      `SELECT * FROM user_details 
+       WHERE LOWER(array_to_string(skills, ',')) LIKE $1 
+          OR LOWER(name) LIKE $1 
+          OR LOWER(email) LIKE $1`,
+      [`%${skill}%`]
+    );
+
+    res.json({ results: result.rows }); // ✅ Must return as { results: [...] }
+  } catch (err) {
+    console.error("Search error:", err.message);
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+
 //?api/mark-attendance
 app.post("/api/mark-attendance", async (req, res) => {
   const { user_id } = req.body;
@@ -133,7 +152,7 @@ app.post("/api/mark-attendance", async (req, res) => {
   const hours = now.getHours();
   const minutes = now.getMinutes();
 
-  if (hours > 9 || (hours === 9 && minutes > 30)) {
+  if (hours < 9 || (hours === 9 && minutes > 30)) {
     return res.status(400).json({ error: "Cannot mark attendance after 9:30 AM" });
   }
 
@@ -159,6 +178,34 @@ app.post("/api/mark-attendance", async (req, res) => {
     res.json({ message: "Attendance marked successfully" });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
+  }
+});
+app.get("/consultants", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM user_details");
+    res.json({ results: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch consultants" });
+  }
+});
+app.get("/onbench", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM user_details WHERE consultant_status = 'bench'");
+    res.json({ results: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch on-bench consultants" });
+  }
+});
+
+app.get("/active", async (req, res) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM user_details WHERE consultant_status = 'Active'"
+    );
+    res.json({ results: results.rows });
+  } catch (error) {
+    console.error("Error fetching active consultants:", error.message);
+    res.status(500).json({ error: "Failed to fetch active consultants" });
   }
 });
 

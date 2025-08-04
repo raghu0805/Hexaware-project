@@ -9,20 +9,34 @@ import ResumeUpload from './ResumeUpload';
 
 const ConsultantDashboard= () => {
   // Using first consultant as current user for demo
-//   const currentConsultant = mockConsultants[0];
-//   const recentOpportunities = mockOpportunities.filter(opp => opp.consultantId === currentConsultant.id);
-//   const recentAttendance = mockAttendanceRecords.filter(att => att.consultantId === currentConsultant.id);
+  //   const currentConsultant = mockConsultants[0];
+  //   const recentOpportunities = mockOpportunities.filter(opp => opp.consultantId === currentConsultant.id);
+  //   const recentAttendance = mockAttendanceRecords.filter(att => att.consultantId === currentConsultant.id);
   const [user, setUser] = useState(null);
+  const [present,setpresent]=useState(false);
+  console.log(present);
+  
+useEffect(() => {
+  fetch("http://localhost:5000/api/user")
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("Fetched user data:", data);
+      setUser(data);
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/user")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Fetched user data:", data);
-        setUser(data);
-      })
-      .catch((err) => console.error("Error fetching user:", err));
-  }, []);
+      // 👇 Fetch attendance after user is set
+      if (data && data.length > 0) {
+fetch(`http://localhost:5000/api/mark-attendance?user_id=${user_id}`)
+
+          .then((res) => res.json())
+          .then((att) => {
+            setpresent(att.present); // ✅ This must be a boolean (true/false)
+          })
+          .catch((err) => console.error("Error checking attendance:", err));
+      }
+    })
+    .catch((err) => console.error("Error fetching user:", err));
+}, []);
+
 
   // Don't use hooks below this point
   if (!user || user.length === 0) {
@@ -79,25 +93,30 @@ const ConsultantDashboard= () => {
             </div>
             </div>
             {user && (
-  <button
-    className="mt-4 px-4 py-2 bg-white text-black rounded hover:bg-white/90"
-    onClick={async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/mark-attendance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: user[0].user_id }),
-        });
-        const data = await res.json();
-        if (data.message) alert(data.message);
-        else alert(data.error);
-      } catch (err) {
-        alert("Error marking attendance");
+<button
+  disabled={present}
+  className={`mt-4 px-4 py-2 rounded ${present ? "bg-green-500 text-white" : "bg-white text-black hover:bg-white/90"}`}
+  onClick={async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/mark-attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user[0].user_id }),
+      });
+      const data = await res.json();
+      if (data.message){
+       console.log(data.message);
+       setpresent(true);
       }
-    }}
-  >
-    Mark Attendance
-  </button>
+      else console.log(data.error);
+    } catch (err) {
+      console.log("Error marking attendance");
+    }
+  }}
+>
+  {present ? "Present" : "Mark Attendance"}
+</button>
+
 )}
 
           </div>

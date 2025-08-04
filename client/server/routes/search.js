@@ -13,7 +13,7 @@ router.post("/search", async (req, res) => {
 
     if (results.rows.length > 0) {
         console.log("Result:",[results.rows[0]])
-      return res.json({ results: [results.rows[0]] });
+return res.json({ results: results.rows }); // ✅ Return all matching users
     } else {
       return res.json({ message: "No strong matches found" });
     }
