@@ -4,15 +4,17 @@ import StatusCard from './StatusCard';
 import WorkflowProgress from './WorkFlowProgress';
 import ResumeUpload from './ResumeUpload';
 import { useUser } from './UseContext';
+import { useNavigate } from 'react-router-dom';
 // import { mockConsultants, mockWorkflowSteps, mockOpportunities, mockAttendanceRecords } from '../../data/mockData';
 // import WorkflowProgress from './WorkflowProgress';
 
 
 const ConsultantDashboard = () => {
-  const [user, setUser] = useState(null);
-  const [present, setPresent] = useState(false);
-
+  const navigate=useNavigate();
   const { userDetail } = useUser();
+  const [user, setUser] = useState(null);
+  const [present, setPresent] = useState(null);
+  console.log(present)
 
   useEffect(() => {
     if (userDetail) {
@@ -25,7 +27,9 @@ const ConsultantDashboard = () => {
     async function fetchAttendance() {
       if (!userDetail?.user_id) return;
       try {
-        const attRes = await fetch(`http://localhost:5000/api/check-attendance/${userDetail.user_id}`);
+        const uid=userDetail.user_id;
+        const attRes = await fetch(`http://localhost:5000/api/check-attendance?uid=${uid}`);
+        console.log("below the check attendance route")
         const attData = await attRes.json();
         setPresent(attData.present);
       } catch (err) {
@@ -42,9 +46,8 @@ const ConsultantDashboard = () => {
 
 
   return (
-    <div className="px-4 sm:px-0">
-          <h2>Welcome, {userDetail?.name}</h2>
-      <p>Your email: {userDetail?.email}</p>
+    <div className="px-4 ">
+      
       {/* Welcome Section */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
@@ -60,7 +63,7 @@ const ConsultantDashboard = () => {
               <div className="flex items-center mt-2">
                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-100">
                   {/* {currentConsultant.status.charAt(0).toUpperCase() + currentConsultant.status.slice(1)} */}
-                  RaghuStatus
+                  {userDetail.consultant_status}
                 </span>
               </div>
             </div>
@@ -80,7 +83,8 @@ const ConsultantDashboard = () => {
       const data = await res.json();
       if (data.message){
        console.log(data.message);
-       setpresent(true);
+       setPresent(true);
+       navigate("");
       }
       else console.log(data.error);
     } catch (err) {
@@ -104,7 +108,7 @@ const ConsultantDashboard = () => {
         <StatusCard
           title="Resume Status"
           value="Updated"
-          description="Last updated Jan 15, 2024"
+          description={userDetail.updated_at.slice(0,10)}
           icon={<User className="w-6 h-6" />}
           status="success"
         />

@@ -12,9 +12,10 @@ const ConsultantLogin = () => {
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
+    console.log(data);
 
     try {
-      const response = await fetch("http://localhost:5000/consultant-login", {
+      const response = await fetch(`http://localhost:5000/consultant-login/?email=${data.email}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -23,9 +24,12 @@ const ConsultantLogin = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        console.log("user_id",result.detail[0].user_id);
+        localStorage.setItem("user_id",result.detail[0].user_id)  
         localStorage.setItem("email", data.email);
         localStorage.setItem("Role", "consultant");
         navigate("/consultant");
+         window.location.reload(); 
       } else {
         setErrorMsg(result.message || "Invalid email or password");
       }

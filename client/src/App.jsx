@@ -8,6 +8,7 @@ import AdminConsole from './Components/AdminConsole';
 import ConsultantAdmin from './Components/ConsultantAdmin';
 import ResumeUploader from './PracticeResume/ResumeUploader';
 import ConsultantLogin from './Auth/ConsultantLogin';
+import CreateProject from './Components/CreateProject';
 
 
 
@@ -25,9 +26,9 @@ function App() {
           <Route path="/login" element={<ConsultantLogin/>}/>
           <Route path="/consultant" element={<ConsultantAdmin/>} />
           <Route path="/resumeupload" element={<ResumeUpload/>}/>
-          
           <Route path="/register" element={<Register/>}/>
           <Route path="/adminpage" element={<AdminConsole/>}/>
+          <Route path="/createproject" element={<CreateProject/>}/>
         </Routes>
     </Router>
   );

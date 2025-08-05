@@ -31,7 +31,7 @@ app.post('/consultant-login', async (req, res) => {
   // Use your DB query logic here
   const result = await pool.query("SELECT * FROM user_details WHERE email = $1 AND password = $2", [email, password]);
   if (result.rows.length > 0) {
-    res.json({ success: true });
+    res.json({ success: true,detail:result.rows });
   } else {
     res.status(401).json({ success: false, message: "Wrong email or password" });
   }
@@ -93,6 +93,7 @@ const upload = multer({ storage }); // ✅ Use your custom storage
 
 // Resume upload and processing
 app.post("/upload", upload.single("resume"), (req, res) => {
+  currentUserId=(req.query.userId)
   // const resumePath = path.join(__dirname, req.file.path);
   const uploadedFileName = req.file.filename; // This includes the extension like .pdf
   const resumePath = path.join(__dirname, 'uploads', uploadedFileName);
@@ -113,6 +114,7 @@ app.post("/upload", upload.single("resume"), (req, res) => {
       // ✅ Print extracted data
       console.log("Extracted Skills:", skills);
       console.log("Generated Embedding:", embedding);
+      console.log(currentUserId);
 
       // ✅ Update current user record with skills and embedding
       await pool.query(
@@ -183,18 +185,44 @@ app.post("/api/mark-attendance", async (req, res) => {
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: "Attendance already marked for today" });
     }
-
     // Insert attendance
     await pool.query(
       "INSERT INTO attendance(user_id, date, time) VALUES ($1, $2, $3)",
       [user_id, date, now.toTimeString().split(" ")[0]]
     );
-
     res.json({ message: "Attendance marked successfully" });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }
 });
+
+// ✅ Check attendance route
+app.get("/api/check-attendance", async (req, res) => {
+  const uid = req.query.uid;
+
+  try {
+    const ispresent = await pool.query(
+      `SELECT attendance.status 
+       FROM attendance 
+       JOIN user_details ON attendance.user_id = user_details.user_id 
+       WHERE user_details.user_id = $1 
+       AND attendance.date = CURRENT_DATE`,
+      [uid]
+    );
+
+    if (ispresent.rows.length > 0) {
+      return res.status(200).json({ present: ispresent.rows[0].status });
+    } else {
+      return res.status(200).json({ present: false }); // No attendance marked
+    }
+  } catch (err) {
+    console.error("Error checking attendance:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
 app.get("/consultants", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM user_details");

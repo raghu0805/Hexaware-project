@@ -1,10 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Upload, CheckCircle, AlertCircle } from 'lucide-react';
+import { useUser } from './UseContext';
 
 const ResumeUpload = ({ isDragActive }) => {
   const fileInputRef = useRef(null);
   const [uploadStatus, setUploadStatus] = useState(null); // "loading", "success", "error"
-
+    const { userDetail } = useUser();
   const handleDivClick = () => {
     fileInputRef.current.click();
   };
@@ -20,7 +21,7 @@ const ResumeUpload = ({ isDragActive }) => {
 
 
     try {
-      const response = await fetch("http://localhost:5000/upload", {
+      const response = await fetch(`http://localhost:5000/upload?userId=${userDetail.user_id}`, {
         method: "POST",
         body: formData,
       });

@@ -14,7 +14,7 @@ export function useUser() {
 
 // Provider component
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [userDetail, setUser] = useState(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("user_id");
@@ -32,7 +32,7 @@ export function UserProvider({ children }) {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ userDetail, setUser }}>
       {children}
     </UserContext.Provider>
   );

@@ -19,6 +19,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 const Register = () => {
   const Role = localStorage.getItem("Role");
+  console.log(Role)
   const emailexist = localStorage.getItem("email");
   const navigate = useNavigate();
 
@@ -28,27 +29,35 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
   const data = Object.fromEntries(formData.entries());
+  console.log(data);
+
 
   try {
-    const response = await fetch("http://localhost:5000/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    if(data.email!="HR@Hexaware.in"){
+      const response = await fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      console.log("Register Result:", result); // 👀 Log it
+      if (response.ok && result.message === "Registered Successfully") {
+            localStorage.setItem("email", data.email);
+          navigate("/login"); // ✅ This should now work
+        
+          } else {
+            alert(result.message || "Invalid email or password");
+          }
+        }
+        else{
+          navigate("/adminpage")
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        alert("Something went wrong. Please try again.");
+      }
 
-    const result = await response.json();
-    console.log("Register Result:", result); // 👀 Log it
 
-if (response.ok && result.message === "Registered Successfully") {
-      localStorage.setItem("email", data.email);
-      navigate("/consultant"); // ✅ This should now work
-    } else {
-      alert(result.message || "Invalid email or password");
-    }
-  } catch (err) {
-    console.error("Error:", err);
-    alert("Something went wrong. Please try again.");
-  }
 };
 
 
@@ -75,9 +84,6 @@ if (response.ok && result.message === "Registered Successfully") {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {Role == "hr" ? " " : "Personal Information"}
             </h2>
-
-
-
             {Role == "hr" ? <><div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email *

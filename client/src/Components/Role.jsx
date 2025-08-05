@@ -2,13 +2,20 @@ import React from 'react'
 import { Users, Briefcase, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const Role = () => {
+const Role =() => {
     const navigate = useNavigate();
    const handleRoleSelection = async(role) => {
-    await localStorage.setItem("Role",role);
-    const userid=await localStorage.getItem("email");
-    if(userid){
-      navigate("/login")
+    const ishr=await localStorage.setItem("Role",role);
+    console.log(ishr)
+    const userid=await localStorage.getItem("user_id");
+    console.log(userid)
+    if(ishr=='consultant'){
+      if(userid){
+        navigate("/login")
+      }
+      else{
+        navigate("/login")
+      }
     }
     else{
       navigate("/register");
