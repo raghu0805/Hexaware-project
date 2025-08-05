@@ -3,75 +3,48 @@ import { User, Calendar, Briefcase, GraduationCap, CheckCircle, Clock, XCircle }
 import StatusCard from './StatusCard';
 import WorkflowProgress from './WorkFlowProgress';
 import ResumeUpload from './ResumeUpload';
+import { useUser } from './UseContext';
 // import { mockConsultants, mockWorkflowSteps, mockOpportunities, mockAttendanceRecords } from '../../data/mockData';
 // import WorkflowProgress from './WorkflowProgress';
 
 
-const ConsultantDashboard= () => {
-  // Using first consultant as current user for demo
-  //   const currentConsultant = mockConsultants[0];
-  //   const recentOpportunities = mockOpportunities.filter(opp => opp.consultantId === currentConsultant.id);
-  //   const recentAttendance = mockAttendanceRecords.filter(att => att.consultantId === currentConsultant.id);
+const ConsultantDashboard = () => {
   const [user, setUser] = useState(null);
-  const [present,setpresent]=useState(false);
-  console.log(present);
+  const [present, setPresent] = useState(false);
+
+  const { userDetail } = useUser();
+
+  useEffect(() => {
+    if (userDetail) {
+      setUser(userDetail);
+    }
+  }, [userDetail]);
   
-useEffect(() => {
-  fetch("http://localhost:5000/api/user")
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("Fetched user data:", data);
-      setUser(data);
-
-      // 👇 Fetch attendance after user is set
-      if (data && data.length > 0) {
-fetch(`http://localhost:5000/api/mark-attendance?user_id=${user_id}`)
-
-          .then((res) => res.json())
-          .then((att) => {
-            setpresent(att.present); // ✅ This must be a boolean (true/false)
-          })
-          .catch((err) => console.error("Error checking attendance:", err));
+  useEffect(() => {
+    console.log("UserDetails:",userDetail)
+    async function fetchAttendance() {
+      if (!userDetail?.user_id) return;
+      try {
+        const attRes = await fetch(`http://localhost:5000/api/check-attendance/${userDetail.user_id}`);
+        const attData = await attRes.json();
+        setPresent(attData.present);
+      } catch (err) {
+        console.error("Error fetching attendance:", err);
       }
-    })
-    .catch((err) => console.error("Error fetching user:", err));
-}, []);
-
-
-  // Don't use hooks below this point
-  if (!user || user.length === 0) {
-    return <p>Loading user data...</p>;
-  }
-
-  const { user_id, name, email } = user[0]
-
-
-
-
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'in-progress':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      default:
-        return <XCircle className="w-5 h-5 text-gray-400" />;
     }
-  };
 
-  const getStatusColor = () => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-600 bg-green-50';
-      case 'in-progress':
-        return 'text-yellow-600 bg-yellow-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
+    fetchAttendance();
+  }, [userDetail]);
+
+  if (!user) return <p>Loading user data...</p>;
+
+  const { user_id, name } = user;
+
 
   return (
     <div className="px-4 sm:px-0">
+          <h2>Welcome, {userDetail?.name}</h2>
+      <p>Your email: {userDetail?.email}</p>
       {/* Welcome Section */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
@@ -101,7 +74,8 @@ fetch(`http://localhost:5000/api/mark-attendance?user_id=${user_id}`)
       const res = await fetch("http://localhost:5000/api/mark-attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user[0].user_id }),
+        body: JSON.stringify({ user_id: user.user_id }),
+
       });
       const data = await res.json();
       if (data.message){

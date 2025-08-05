@@ -60,6 +60,21 @@ app.get("/api/user", async (req, res) => {
   const result = await pool.query("SELECT * FROM user_details WHERE user_id = $1", [currentUserId]);
   res.json(result.rows);
 });
+app.get("/api/userdetails/:id", async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const result = await pool.query("SELECT * FROM user_details WHERE user_id = $1", [userId]);
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (err) {
+    console.error("Error fetching user details:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');

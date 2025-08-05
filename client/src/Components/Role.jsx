@@ -6,7 +6,13 @@ const Role = () => {
     const navigate = useNavigate();
    const handleRoleSelection = async(role) => {
     await localStorage.setItem("Role",role);
-   navigate("/register");
+    const userid=await localStorage.getItem("email");
+    if(userid){
+      navigate("/login")
+    }
+    else{
+      navigate("/register");
+    }
      };
   return (
      <div className="min-h-screen flex items-center justify-center p-6">

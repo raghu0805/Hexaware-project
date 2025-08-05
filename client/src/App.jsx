@@ -17,6 +17,7 @@ function App() {
   return (
     <Router>
       
+      
         <Routes>
           <Route path="/uploadresume" element={<ResumeUploader/>}/>
           <Route path="/" element={<Role/>}/>
