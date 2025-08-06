@@ -100,7 +100,7 @@ const AdminConsole = () => {
 
 
   return (
-    <div className="p-6 ml-4  sm:px-0">
+    <div className="p-6 ">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Console</h1>
@@ -171,21 +171,20 @@ const AdminConsole = () => {
         </div>
       </div>
       <div className="flex justify-between items-center mb-8">
-  <div>
+<div className="w-full flex justify-between items-center mb-8">
+<div>
+  <h1 className="text-2xl font-bold text-gray-900 mb-1">My Project</h1>
+  <p className="text-gray-600">Create and manage your internal projects</p>
+</div>
 
-  </div>
-  <button
-    onClick={() => navigate("/createproject")}
-    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-  >
-    + My Project
-  </button>
   <button
     onClick={() => navigate("/createproject")}
     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
   >
     + Create Project
   </button>
+</div>
+
 </div>
 
 

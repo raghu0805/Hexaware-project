@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import searchRoutes from './routes/search.js'
+import projectRoutes from './routes/project.js';
 // ✅ Use shared connection pool
 import pool from './db.js'; // or wherever your pool.js file is
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,8 @@ app.use((req, res, next) => {
 });
 // app.use("/api", searchRoutes);
 app.use("/", searchRoutes);
+// Project Routes
+app.use("/", projectRoutes);
 let currentUserId = null; // Store current user ID in memory
 app.post('/consultant-login', async (req, res) => {
   const { email, password } = req.body;

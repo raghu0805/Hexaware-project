@@ -9,6 +9,7 @@ import ConsultantAdmin from './Components/ConsultantAdmin';
 import ResumeUploader from './PracticeResume/ResumeUploader';
 import ConsultantLogin from './Auth/ConsultantLogin';
 import CreateProject from './Components/CreateProject';
+import StatusCard from './Components/StatusCard';
 
 
 
@@ -29,6 +30,8 @@ function App() {
           <Route path="/register" element={<Register/>}/>
           <Route path="/adminpage" element={<AdminConsole/>}/>
           <Route path="/createproject" element={<CreateProject/>}/>
+          <Route path="/status" element={<StatusCard/>}/>
+
         </Routes>
     </Router>
   );

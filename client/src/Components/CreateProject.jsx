@@ -6,59 +6,107 @@ export default function CreateProject() {
   const [roles, setRoles] = useState([]);
   const [duration, setDuration] = useState("");
   const [selectedMembers, setSelectedMembers] = useState({});
-  const [allConsultants, setAllConsultants] = useState([]);
+  const [onBenchConsultants, setOnBenchConsultants] = useState([]);
 
   const roleSuggestions = {
     fullstack: ["Frontend Developer", "Backend Developer", "Designer", "Researcher"],
     ai: ["Data Scientist", "ML Engineer", "Annotator", "Research Analyst"],
-    ml: ["ML Engineer", "Data Engineer", "Analyst", "Trainer"]
+    ml: ["ML Engineer", "Data Engineer", "Analyst", "Trainer"],
   };
 
-  // Example: simulate fetching consultants from backend
+  const roleToSkillsMap = {
+    "Frontend Developer": ["React", "HTML", "CSS", "JavaScript"],
+    "Backend Developer": ["Node.js", "Express", "PostgreSQL", "Django","Database"],
+    "Designer": ["UI/UX", "Figma", "Adobe","Web Design"],
+    "Researcher": ["Research", "Documentation","Ux Research"],
+
+    "Data Scientist": ["Python", "Pandas", "Statistics"],
+    "ML Engineer": ["Machine Learning", "Scikit-learn", "TensorFlow", "ML"],
+    "Annotator": ["Labeling", "Annotation"],
+    "Research Analyst": ["SQL", "Excel", "Market Research"],
+
+    "Data Engineer": ["SQL", "ETL", "Data Pipeline"],
+    "Analyst": ["Analytics", "Reporting", "Visualization"],
+    "Trainer": ["Teaching", "Presentation"],
+  };
+
   useEffect(() => {
-    setAllConsultants([
-      { user_id: "uuid-1", name: "Alice" },
-      { user_id: "uuid-2", name: "Bob" },
-      { user_id: "uuid-3", name: "Charlie" },
-      { user_id: "uuid-4", name: "Diana" },
-      { user_id: "uuid-5", name: "Ethan" },
-    ]);
+    fetch("http://localhost:5000/onbench")
+      .then((res) => res.json())
+      .then((data) => setOnBenchConsultants(data.results || []))
+      .catch((err) => console.error("Failed to fetch on-bench consultants:", err));
   }, []);
 
-  // When project type changes, auto-set team size and roles
   useEffect(() => {
     if (projectType && roleSuggestions[projectType]) {
       const newRoles = roleSuggestions[projectType];
       setRoles(newRoles);
       setTeamSize(newRoles.length);
-      setSelectedMembers({}); // reset selected members
+      setSelectedMembers({});
     }
   }, [projectType]);
 
   const handleMemberSelect = (role, userId) => {
-    setSelectedMembers((prev) => ({
-      ...prev,
-      [role]: userId,
-    }));
+    if (Object.values(selectedMembers).includes(userId)) return;
+    setSelectedMembers((prev) => ({ ...prev, [role]: userId }));
   };
 
-  const handleSubmit = () => {
-    const projectData = {
-      projectType,
-      teamSize,
-      duration,
-      team: roles.map((role) => ({
-        role,
-        user_id: selectedMembers[role] || null,
-      })),
-    };
-
-    console.log("Project Created:", projectData);
-    // send to backend here
+  const isMemberSelectedElsewhere = (userId, currentRole) => {
+    return Object.entries(selectedMembers).some(
+      ([role, uid]) => uid === userId && role !== currentRole
+    );
   };
+
+  const isQualifiedForRole = (consultant, role) => {
+    const requiredSkills = (roleToSkillsMap[role] || []).map((skill) =>
+      skill.toLowerCase()
+    );
+
+    const normalizedSkills = consultant.skills
+      ?.replace(/[{}"]/g, "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase());
+
+    return requiredSkills.some((skill) => normalizedSkills?.includes(skill));
+  };
+
+const handleSubmit = async () => {
+  const projectData = {
+    projectType,
+    duration,
+    team: roles.map((role) => ({
+      role,
+      user_id: selectedMembers[role] || null,
+    })),
+  };
+  console.log("Project Data:",projectData )
+  try {
+    const res = await fetch("http://localhost:5000/create-project", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(projectData),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert("✅ Project created successfully!");
+    } else {
+      alert("❌ Failed to create project: " + data.error);
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("❌ Something went wrong!");
+  }
+};
+
+
+  const isCreateDisabled =
+    Object.keys(selectedMembers).length !== roles.length ||
+    onBenchConsultants.length < roles.length ||
+    !duration;
 
   return (
-    <div className="p-6  ">
+    <div className="p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Create New Project</h1>
         <p className="text-gray-600">Define your project and assign required team members.</p>
@@ -81,7 +129,9 @@ export default function CreateProject() {
 
         {projectType && (
           <div>
-            <p className="text-gray-700 font-medium mb-2">Assign Members to Roles (Team Size: {teamSize})</p>
+            <p className="text-gray-700 font-medium mb-2">
+              Assign Members to Roles (Team Size: {teamSize})
+            </p>
             <div className="space-y-4">
               {roles.map((role, index) => (
                 <div key={index}>
@@ -92,11 +142,23 @@ export default function CreateProject() {
                     className="w-full border border-gray-300 rounded-lg px-4 py-2"
                   >
                     <option value="">Select Member</option>
-                    {allConsultants.map((consultant) => (
-                      <option key={consultant.user_id} value={consultant.user_id}>
-                        {consultant.name}
-                      </option>
-                    ))}
+                    {onBenchConsultants.map((consultant) => {
+                      const isQualified = isQualifiedForRole(consultant, role);
+                      const isUsed = isMemberSelectedElsewhere(
+                        consultant.user_id,
+                        role
+                      );
+                      return (
+                        <option
+                          key={consultant.user_id}
+                          value={consultant.user_id}
+                          disabled={isUsed || !isQualified}
+                        >
+                          {consultant.name}
+                          {!isQualified ? " (Not qualified)" : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               ))}
@@ -105,7 +167,9 @@ export default function CreateProject() {
         )}
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Project Duration (in weeks)</label>
+          <label className="block text-gray-700 font-medium mb-1">
+            Project Duration (in weeks)
+          </label>
           <input
             type="number"
             min="1"
@@ -118,7 +182,12 @@ export default function CreateProject() {
 
         <button
           onClick={handleSubmit}
-          className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+          disabled={isCreateDisabled}
+          className={`px-6 py-2 rounded-lg text-white transition ${
+            isCreateDisabled
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
           Create Project
         </button>
