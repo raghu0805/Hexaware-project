@@ -254,6 +254,52 @@ app.get("/active", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch active consultants" });
   }
 });
+// Helper to get 1st day of current month in YYYY-MM-DD
+function getFirstDayOfCurrentMonth() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  return firstDay.toISOString().split("T")[0];
+}
+
+// Route: /calculate-attendance-percentage?days=31&userid=abc123
+app.get("/calculate-attendance-percentage", async (req, res) => {
+  const { days, userid } = req.query;
+
+  if (!days || !userid) {
+    return res.status(400).json({ error: "Missing 'days' or 'userid' query parameters" });
+  }
+
+  const startDate = getFirstDayOfCurrentMonth();
+  const today = new Date().toISOString().split("T")[0];
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT COUNT(*) AS present_days
+      FROM attendance a
+      INNER JOIN user_details u ON a.user_id = u.user_id
+      WHERE a.user_id = $1
+        AND a.status = 'Present'
+        AND a.date BETWEEN $2 AND $3
+      `,
+      [userid, startDate, today]
+    );
+
+    const presentDays = parseInt(result.rows[0].present_days || 0);
+    const totalDays = parseInt(days);
+    const percentage = ((presentDays / totalDays) * 100).toFixed(2);
+    console.log(percentage,userid)
+await pool.query(
+  "UPDATE user_details SET attendance = $1 WHERE user_id = $2",
+  [percentage, userid]
+);
+
+    res.json({ presentDays, totalDays, percentage });
+  } catch (err) {
+    console.error("❌ Error calculating attendance:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.use((req, res, next) => {
   res.status(404).json({ error: "Route not found" });

@@ -32,18 +32,40 @@ router.post("/create-project", async (req, res) => {
       endDate.toISOString().split("T")[0],
     ]);
 
-    for (const member of team) {
-      if (member.user_id) {
-        await client.query(
-          `update user_details set consultant_status='Active' where user_id=$1`,[member.user_id]
-        );
-        await client.query(
-          `INSERT INTO project_members (project_id, user_id, role)
-           VALUES ($1, $2, $3)`,
-          [projectId, member.user_id, member.role]
-        );
-      }
+for (const member of team) {
+  if (member.user_id) {
+    // 1. Update consultant status
+    await client.query(
+      `UPDATE user_details SET consultant_status = 'Active' WHERE user_id = $1`,
+      [member.user_id]
+    );
+
+    // 2. Insert into project_members
+    await client.query(
+      `INSERT INTO project_members (project_id, user_id, role)
+       VALUES ($1, $2, $3)`,
+      [projectId, member.user_id, member.role]
+    );
+
+    // 3. Safely increment no_oppurtunity
+    const result = await client.query(
+      `SELECT no_oppurtunity FROM user_details WHERE user_id = $1`,
+      [member.user_id]
+    );
+
+    if (result.rows.length > 0) {
+      const currentValue = result.rows[0].no_oppurtunity || 0;
+      await client.query(
+        `UPDATE user_details SET no_oppurtunity = $1 WHERE user_id = $2`,
+        [currentValue + 1, member.user_id]
+      );
+    } else {
+      console.error(`❌ User not found with ID: ${member.user_id}`);
+      throw new Error(`User not found with ID: ${member.user_id}`);
     }
+  }
+}
+
 
     await client.query("COMMIT");
     res.status(201).json({ message: "✅ Project created successfully", projectId });

@@ -100,6 +100,7 @@ export default function CreateProject() {
         body: JSON.stringify(projectData),
       });
       const data = await res.json();
+      console.log("Data from create-project");
       if (res.ok) {
         alert("✅ Project created successfully!");
         navigate("/adminpage")

@@ -5,8 +5,7 @@ import WorkflowProgress from './WorkFlowProgress';
 import ResumeUpload from './ResumeUpload';
 import { useUser } from './UseContext';
 import { useNavigate } from 'react-router-dom';
-// import { mockConsultants, mockWorkflowSteps, mockOpportunities, mockAttendanceRecords } from '../../data/mockData';
-// import WorkflowProgress from './WorkflowProgress';
+
 
 
 const ConsultantDashboard = () => {
@@ -115,13 +114,13 @@ const ConsultantDashboard = () => {
         <StatusCard
           title="Attendance Rate"
         //   value={`${currentConsultant.attendanceRate}%`}
-          description="This month"
+          value={`${userDetail.attendance}%`}
           icon={<Calendar className="w-6 h-6" />}
           status="success"
         />
         <StatusCard
           title="Opportunities"
-        //   value={currentConsultant.opportunitiesProvided.toString()}
+          value={userDetail.no_oppurtunity}
           description="Total provided"
           icon={<Briefcase className="w-6 h-6" />}
           status="info"
@@ -141,16 +140,16 @@ const ConsultantDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> */}
         {/* Recent Opportunities */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Recent Opportunities</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {/* {recentOpportunities.map((opportunity) => ( */}
-                <div  className="flex items-start space-x-3">
+                {/* <div  className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 rounded-full mt-2  bg-red-500" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">{}</p>
@@ -162,19 +161,19 @@ const ConsultantDashboard = () => {
                       </span>
                     </div>
                   </div>
-                </div>
-            </div>
-          </div>
-        </div>
+                </div> */}
+            {/* </div> */}
+          {/* </div> */}
+        {/* </div> */} 
 
         {/* Recent Attendance */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        {/* <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Recent Attendance</h3>
-          </div>
-          <div className="p-6">
+          </div> */}
+          {/* <div className="p-6">
             <div className="space-y-4">
-                <div  className="flex items-center justify-between">
+                {/* <div  className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div>
                       <p className="text-sm font-medium text-gray-900">{}</p>
@@ -187,12 +186,12 @@ const ConsultantDashboard = () => {
                     </span>
                     <p className="text-xs text-gray-400 mt-1">{} min</p>
                   </div>
-                </div>
+                </div> */}
             
-            </div>
-          </div>
-        </div>
-      </div>
+            {/* </div> */} 
+          {/* </div> */}
+        {/* </div> */}
+      {/* </div> */}
     </div>
   );
 };
