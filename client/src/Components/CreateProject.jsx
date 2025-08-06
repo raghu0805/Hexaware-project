@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateProject() {
   const [projectType, setProjectType] = useState("");
+  const [projectName, setProjectName] = useState("");
   const [teamSize, setTeamSize] = useState(0);
   const [roles, setRoles] = useState([]);
   const [duration, setDuration] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selectedMembers, setSelectedMembers] = useState({});
   const [onBenchConsultants, setOnBenchConsultants] = useState([]);
 
@@ -16,15 +20,13 @@ export default function CreateProject() {
 
   const roleToSkillsMap = {
     "Frontend Developer": ["React", "HTML", "CSS", "JavaScript"],
-    "Backend Developer": ["Node.js", "Express", "PostgreSQL", "Django","Database"],
-    "Designer": ["UI/UX", "Figma", "Adobe","Web Design"],
-    "Researcher": ["Research", "Documentation","Ux Research"],
-
+    "Backend Developer": ["Node.js", "Express", "PostgreSQL", "Django", "Database"],
+    "Designer": ["UI/UX", "Figma", "Adobe", "Web Design"],
+    "Researcher": ["Research", "Documentation", "Ux Research"],
     "Data Scientist": ["Python", "Pandas", "Statistics"],
     "ML Engineer": ["Machine Learning", "Scikit-learn", "TensorFlow", "ML"],
     "Annotator": ["Labeling", "Annotation"],
     "Research Analyst": ["SQL", "Excel", "Market Research"],
-
     "Data Engineer": ["SQL", "ETL", "Data Pipeline"],
     "Analyst": ["Analytics", "Reporting", "Visualization"],
     "Trainer": ["Teaching", "Presentation"],
@@ -46,6 +48,16 @@ export default function CreateProject() {
     }
   }, [projectType]);
 
+  useEffect(() => {
+    if (duration > 0) {
+      const today = new Date();
+      const end = new Date(today);
+      end.setDate(today.getDate() + duration * 7);
+      setStartDate(today.toISOString().split("T")[0]);
+      setEndDate(end.toISOString().split("T")[0]);
+    }
+  }, [duration]);
+
   const handleMemberSelect = (role, userId) => {
     if (Object.values(selectedMembers).includes(userId)) return;
     setSelectedMembers((prev) => ({ ...prev, [role]: userId }));
@@ -61,49 +73,51 @@ export default function CreateProject() {
     const requiredSkills = (roleToSkillsMap[role] || []).map((skill) =>
       skill.toLowerCase()
     );
-
     const normalizedSkills = consultant.skills
-      ?.replace(/[{}"]/g, "")
+      ?.replace(/[{}"\[\]]/g, "")
       .split(",")
       .map((s) => s.trim().toLowerCase());
-
     return requiredSkills.some((skill) => normalizedSkills?.includes(skill));
   };
+  const navigate=useNavigate();
+  const handleSubmit = async () => {
+    const projectData = {
+      projectType,
+      project_name: projectName,
+      duration,
+      start_date: startDate,
+      end_date: endDate,
+      team: roles.map((role) => ({
+        role,
+        user_id: selectedMembers[role] || null,
+      })),
+    };
 
-const handleSubmit = async () => {
-  const projectData = {
-    projectType,
-    duration,
-    team: roles.map((role) => ({
-      role,
-      user_id: selectedMembers[role] || null,
-    })),
-  };
-  console.log("Project Data:",projectData )
-  try {
-    const res = await fetch("http://localhost:5000/create-project", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(projectData),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      alert("✅ Project created successfully!");
-    } else {
-      alert("❌ Failed to create project: " + data.error);
+    try {
+      const res = await fetch("http://localhost:5000/create-project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(projectData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ Project created successfully!");
+        navigate("/adminpage")
+      } else {
+        alert("❌ Failed to create project: " + data.error);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      alert("❌ Something went wrong!");
     }
-  } catch (err) {
-    console.error("Error:", err);
-    alert("❌ Something went wrong!");
-  }
-};
-
+  
+  };
 
   const isCreateDisabled =
     Object.keys(selectedMembers).length !== roles.length ||
     onBenchConsultants.length < roles.length ||
-    !duration;
+    !duration ||
+    !projectName;
 
   return (
     <div className="p-6">
@@ -113,6 +127,16 @@ const handleSubmit = async () => {
       </div>
 
       <div className="bg-white shadow-sm rounded-xl border p-6 space-y-6">
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">Project Name</label>
+          <input
+            type="text"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
         <div>
           <label className="block text-gray-700 font-medium mb-1">Project Type</label>
           <select
@@ -176,6 +200,26 @@ const handleSubmit = async () => {
             max="52"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
           />
         </div>
