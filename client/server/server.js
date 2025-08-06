@@ -254,6 +254,17 @@ app.get("/active", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch active consultants" });
   }
 });
+app.get("/projects", async (req, res) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM project_details"
+    );
+    res.json({ results: results.rows });
+  } catch (error) {
+    console.error("Error fetching active consultants:", error.message);
+    res.status(500).json({ error: "Failed to fetch active consultants" });
+  }
+});
 // Helper to get 1st day of current month in YYYY-MM-DD
 function getFirstDayOfCurrentMonth() {
   const today = new Date();
