@@ -10,6 +10,8 @@ import ResumeUploader from './PracticeResume/ResumeUploader';
 import ConsultantLogin from './Auth/ConsultantLogin';
 import CreateProject from './Components/CreateProject';
 import StatusCard from './Components/StatusCard';
+import CreateCourse from './Components/CreateCourse';
+import AssignCourse from './Components/AssignCourse';
 
 
 
@@ -31,6 +33,11 @@ function App() {
           <Route path="/adminpage" element={<AdminConsole/>}/>
           <Route path="/createproject" element={<CreateProject/>}/>
           <Route path="/status" element={<StatusCard/>}/>
+          <Route path="/createcourse" element={<CreateCourse/>}/>
+          <Route path="/assigncourse" element={<AssignCourse/>}/>
+          <Route path="/assigncourse/:courseId" element={<AssignCourse />} />
+
+          
 
         </Routes>
     </Router>

@@ -1,11 +1,13 @@
 import React from 'react';
-import { Users, Bell } from 'lucide-react';
+import { Users, Bell,LogOut } from 'lucide-react';
 import AdminConsole from './AdminConsole';
 import ConsultantDashboard from './ConsultantDashboard';
+import { useNavigate } from 'react-router-dom';
 
 const ConsultantAdmin = () => {
   const storedRole = localStorage.getItem("Role");
   console.log(storedRole)
+  const navigate=useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -25,12 +27,23 @@ const ConsultantAdmin = () => {
                   Powered by AI Multi-Agent Framework
                 </p>
               </div>
+
+
             </div>
 
             <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-500 transition-colors">
-                <Bell className="w-5 h-5" />
-              </button>
+               <button
+    onClick={() => {
+      sessionStorage.clear(); 
+      localStorage.clear();
+// Clear session
+      navigate("/"); // Redirect
+    }}
+    className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+  >
+    <LogOut className="w-5 h-5" />
+    Logout
+  </button>
             </div>
           </div>
         </div>

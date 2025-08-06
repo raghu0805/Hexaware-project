@@ -254,6 +254,38 @@ app.get("/active", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch active consultants" });
   }
 });
+app.get("/training", async (req, res) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM user_details WHERE consultant_status = 'Training'"
+    );
+    res.json({ results: results.rows });
+  } catch (error) {
+    console.error("Error fetching Training consultants:", error.message);
+    res.status(500).json({ error: "Failed to fetch Training consultants" });
+  }
+});
+
+
+app.get("/count", async (req, res) => {
+  try {
+    const total = await pool.query("SELECT COUNT(*) FROM user_details");
+    const active = await pool.query("SELECT COUNT(*) FROM user_details WHERE consultant_status = 'Active'");
+    const onBench = await pool.query("SELECT COUNT(*) FROM user_details WHERE consultant_status = 'bench'");
+    const training = await pool.query("SELECT COUNT(*) FROM user_details WHERE consultant_status = 'Training'");
+    console.log("total:",total)
+    res.json({
+      total: parseInt(total.rows[0].count),
+      active: parseInt(active.rows[0].count),
+      onBench: parseInt(onBench.rows[0].count),
+      training: parseInt(training.rows[0].count),
+    });
+  } catch (err) {
+    console.error("Error fetching counts:", err.message);
+    res.status(500).json({ error: "Failed to fetch counts" });
+  }
+});
+
 app.get("/projects", async (req, res) => {
   try {
     const results = await pool.query(
@@ -263,6 +295,31 @@ app.get("/projects", async (req, res) => {
   } catch (error) {
     console.error("Error fetching active consultants:", error.message);
     res.status(500).json({ error: "Failed to fetch active consultants" });
+  }
+});
+app.get("/courses", async (req, res) => {
+  try {
+    const results = await pool.query(
+      "SELECT * FROM course_details"
+    );
+    res.json({ results: results.rows });
+  } catch (error) {
+    console.error("Error fetching courses:", error.message);
+    res.status(500).json({ error: "Failed to fetch courses" });
+  }
+});
+app.get("/course", async (req, res) => {
+  try {
+    const id=req.query.id;
+    console.log("id:",id);
+    const results = await pool.query(
+      "SELECT * FROM course_details where id=$1",[id]
+    );
+    console.log("details for course",results.rows)
+    res.json({ results: results.rows });
+  } catch (error) {
+    console.error("Error fetching courses:", error.message);
+    res.status(500).json({ error: "Failed to fetch courses" });
   }
 });
 // Helper to get 1st day of current month in YYYY-MM-DD
@@ -311,6 +368,74 @@ await pool.query(
     res.status(500).json({ error: "Internal server error" });
   }
 });
+app.post("/create-course", async (req, res) => {
+  const { course_name, course_url, duration_weeks, start_date, end_date } = req.body;
+
+  try {
+    const insertQuery = `
+      INSERT INTO course_details (
+        course_name, course_url, duration_weeks, start_date, end_date
+      ) VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `;
+
+    const result = await pool.query(insertQuery, [
+      course_name,
+      course_url,
+      duration_weeks,
+      start_date,
+      end_date,
+    ]);
+
+    res.status(201).json({ message: "✅ Course created successfully", courseId: result.rows[0].id });
+  } catch (error) {
+    console.error("❌ Error creating course:", error);
+    res.status(500).json({ error: "Failed to create course" });
+  }
+});
+app.post("/assign-course", async (req, res) => {
+  const { course_id, consultant_ids } = req.body;
+  console.log(course_id,consultant_ids);
+
+  try {
+    for (const user_id of consultant_ids) {
+      await pool.query(
+        "INSERT INTO course_assignments (course_id, user_id) VALUES ($1, $2)",
+        [course_id, user_id]
+      );
+      await pool.query(
+        "UPDATE user_details set consultant_status='Training' where user_id=$1",[user_id]
+      )
+    }
+
+    res.status(200).json({ message: "Consultants assigned successfully" });
+  } catch (err) {
+    console.error("Assign error:", err);
+    res.status(500).json({ error: "Failed to assign consultants" });
+  }
+});
+
+
+app.get("/consultant-course/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT cd.course_name, cd.course_url, cd.start_date, cd.end_date
+       FROM course_assignments ca
+       JOIN course_details cd ON ca.course_id = cd.id
+       WHERE ca.user_id = $1`,
+      [user_id]
+    );
+    console.log("course of ewb:",result.rows)
+
+    res.json({ course: result.rows[0] || null });
+  } catch (err) {
+    console.error("Error fetching consultant course:", err.message);
+    res.status(500).json({ error: "Failed to fetch course" });
+  }
+});
+
 
 app.use((req, res, next) => {
   res.status(404).json({ error: "Route not found" });

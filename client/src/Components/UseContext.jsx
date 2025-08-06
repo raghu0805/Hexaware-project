@@ -12,7 +12,12 @@ export function useUser() {
 
 export function UserProvider({ children }) {
   const [userDetail, setUser] = useState(null);
-
+const [countDetail, setCountDetail] = useState({
+  total: 0,
+  active: 0,
+  onBench: 0,
+  training: 0,
+});
   useEffect(() => {
     const storedUserId = localStorage.getItem("user_id");
     if (!storedUserId) return;
@@ -38,10 +43,21 @@ export function UserProvider({ children }) {
       .catch((err) => {
         console.error("User fetch error:", err);
       });
+      //get count of active,total,onbench,training
+ fetch(`http://localhost:5000/count`)
+  .then((res) => res.json())
+  .then((data) => {
+    console.log("Count details:", data);
+    setCountDetail(data); // ✅ Save all counts
+  })
+  .catch((err) => {
+    console.error("User fetch error:", err);
+  });
+
   }, []);
 
   return (
-    <UserContext.Provider value={{ userDetail, setUser }}>
+    <UserContext.Provider value={{ countDetail,userDetail, setUser }}>
       {children}
     </UserContext.Provider>
   );

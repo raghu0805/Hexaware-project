@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Download, Users, Activity, AlertTriangle, TrendingUp } from "lucide-react";
+import { Search, Filter, Download, Users, Activity, AlertTriangle, TrendingUp,LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 const AdminConsole = () => {
+    // console.log("Total count:",countDetail)
   const [activeTab, setActiveTab] = useState();
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [Projects,setAllProject]=useState([])
+  const [Courses,setAllCourses]=useState([])
   const [allConsultants, setAllConsultants] = useState([]);
   const [consultants, setConsultants] = useState([]);
   const [activeConsultants, setActiveConsultants] = useState([]);
 
   const [onBenchCount, setOnBenchCount] = useState(0);
+  const [trainingCount, setTrainingCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
+
+  const [countDetail, setCountDetail] = useState({
+    total: 0,
+    active: 0,
+    onBench: 0,
+    training: 0,
+  });
   const navigate = useNavigate();
 const fetchAllConsultants = async () => {
   try {
@@ -26,6 +35,9 @@ const fetchAllConsultants = async () => {
     setAllConsultants([]);
     setConsultants([]);
   }
+
+
+  
 };
 useEffect(() => {
   fetchAllConsultants(); // 👈 Called automatically when the page loads
@@ -49,6 +61,24 @@ useEffect(() => {
       } catch (err) {
         console.error("Failed to fetch all consultants:", err);
       }
+      try {
+        const res = await fetch("http://localhost:5000/courses");
+        const data = await res.json();
+        setAllCourses(data.results || []);
+      } catch (err) {
+        console.error("Failed to fetch all courses:", err);
+      }
+            //get count of active,total,onbench,training
+ fetch(`http://localhost:5000/count`)
+  .then((res) => res.json())
+  .then((data) => {
+    console.log("Count details:", data);
+    setCountDetail(data); // ✅ Save all counts
+  })
+  .catch((err) => {
+    console.error("User fetch error:", err);
+  });
+
     }
     fetchAll();
   }, []);
@@ -62,6 +92,17 @@ useEffect(() => {
       setOnBenchCount(data.results.length);
     } catch (err) {
       console.error("Failed to fetch on-bench consultants:", err);
+      setConsultants([]);
+    }
+  };
+  const fetchTrainingConsultants = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/training");
+      const data = await res.json();
+      setConsultants(data.results || []);
+      setTrainingCount(data.results.length);
+    } catch (err) {
+      console.error("Failed to fetch training consultants:", err);
       setConsultants([]);
     }
   };
@@ -110,14 +151,35 @@ useEffect(() => {
       setConsultants([]);
     }
   };
+const handlecourse = (id) => {
+  sessionStorage.setItem("courseid", id); // ✅ only the id, not object
+  navigate("/assigncourse");
+};
+
 
   return (
     <div className="p-6">
+  
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Console</h1>
-        <p className="text-gray-600">Manage consultants and monitor AI agent performance</p>
-      </div>
+<div className="mb-8 flex justify-between items-center">
+  <div>
+    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Console</h1>
+    <p className="text-gray-600">Manage consultants and monitor AI agent performance</p>
+  </div>
+  <button
+    onClick={() => {
+      localStorage.clear();
+      sessionStorage.clear(); // Clear session
+      navigate("/"); // Redirect
+    }}
+    className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+  >
+    <LogOut className="w-5 h-5" />
+    Logout
+  </button>
+</div>
+
+
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -128,7 +190,7 @@ useEffect(() => {
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">Total Consultants</p>
-              <p className="text-2xl font-bold text-gray-900">{allConsultants.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{countDetail.total}</p>
             </div>
           </div>
         </div>
@@ -140,7 +202,7 @@ useEffect(() => {
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-gray-900">{activeConsultants.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{countDetail.active}</p>
             </div>
           </div>
         </div>
@@ -152,25 +214,74 @@ useEffect(() => {
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">On Bench</p>
-              <p className="text-2xl font-bold text-gray-900">{onBenchCount}</p>
+              <p className="text-2xl font-bold text-gray-900">{countDetail.onBench}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="bg-white rounded-xl shadow-sm border p-6" onClick={fetchTrainingConsultants}>
           <div className="flex items-center">
             <div className="p-2 bg-purple-50 rounded-lg">
               <TrendingUp className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-600">In Training</p>
-              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-2xl font-bold text-gray-900">{countDetail.training}</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Create Project Button */}
+<br></br>
+<br></br>
+      {/* Create Courses Button */}
+      <div className="w-full flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">My Courses</h1>
+          {/* <p className="text-gray-600">Create and manage your internal projects</p> */}
+        </div>
+        <button
+          onClick={() => navigate("/createcourse")}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          + Create Project
+        </button>
+        
+      </div>
+      {Courses.length > 0 && (
+        <div className="mt-6 overflow-auto">
+          <table className="min-w-full bg-white border rounded-lg overflow-hidden">
+            <thead className="bg-gray-100 text-gray-700 text-left">
+              <tr>
+                <th className="px-4 py-2">S.No</th>
+                <th className="px-4 py-2">Course Name</th>
+                <th className="px-4 py-2">Course URL</th>
+                <th className="px-4 py-2">Duration/week</th>
+                <th className="px-4 py-2">Start date</th>
+                <th className="px-4 py-2">End date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Courses.map((c, index) => (
+                <tr  key={index}
+  className="border-t cursor-pointer hover:bg-gray-50"
+onClick={() => handlecourse(c.id)}
+>
+                  <td className="px-4 py-2">{index + 1}</td>
+                  <td className="px-4 py-2">{c.course_name}</td>
+                  <td className="px-4 py-2">{c.course_url}</td>
+                  <td className="px-4 py-2">{c.duration_weeks}</td>
+                  <td className="px-4 py-2">{c.start_date.slice(0,10)}</td>
+                  <td className="px-4 py-2">{c.end_date.slice(0,10)}</td>
+            
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+      )}
+<br></br>
+<br></br>
       <div className="w-full flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">My Project</h1>

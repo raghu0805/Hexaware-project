@@ -13,6 +13,8 @@ const ConsultantDashboard = () => {
   const { userDetail } = useUser();
   const [user, setUser] = useState(null);
   const [present, setPresent] = useState(null);
+  const [trainingCourse, setTrainingCourse] = useState(null);
+
   console.log(present)
 
   useEffect(() => {
@@ -38,6 +40,22 @@ const ConsultantDashboard = () => {
 
     fetchAttendance();
   }, [userDetail]);
+
+
+  useEffect(() => {
+  if (userDetail?.consultant_status === "Training") {
+    fetch(`http://localhost:5000/consultant-course/${userDetail.user_id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("course details:",data.course)
+        setTrainingCourse(data.course);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch course info:", err);
+      });
+  }
+}, [userDetail]);
+
 
   if (!user) return <p>Loading user data...</p>;
 
@@ -100,6 +118,29 @@ const ConsultantDashboard = () => {
         </div>
         
       </div>
+
+      {userDetail.consultant_status == "Training" && trainingCourse && (
+  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 rounded">
+    <h2 className="text-lg font-semibold text-yellow-800">You are in Training</h2>
+    <p className="text-sm text-yellow-700 mt-1">
+      <strong>Course:</strong> {trainingCourse.course_name}
+    </p>
+    <p className="text-sm text-yellow-700">
+      <strong>Link:</strong> <a href={trainingCourse.course_url} className="text-blue-600 underline" target="_blank" rel="noreferrer">{trainingCourse.course_url}</a>
+    </p>
+    <p className="text-sm text-yellow-700">
+      <strong>Remaining:</strong> {
+        Math.max(
+          0,
+          Math.ceil(
+            (new Date(trainingCourse.end_date) - new Date()) / (1000 * 60 * 60 * 24)
+          )
+        )
+      } days
+    </p>
+  </div>
+)}
+
       
       <ResumeUpload/>
       {/* Status Cards */}
