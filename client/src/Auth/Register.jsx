@@ -30,8 +30,6 @@ const handleSubmit = async (e) => {
   const formData = new FormData(e.target);
   const data = Object.fromEntries(formData.entries());
   console.log(data);
-
-
   try {
     if(data.email!="HR@Hexaware.in"){
       const response = await fetch("http://localhost:5000/register", {
@@ -241,8 +239,6 @@ const handleSubmit = async (e) => {
                 <span>Login</span>
                 <ArrowRight className="h-4 w-4" />
               </button> */}
-
-          
           </div>
 
         </form>

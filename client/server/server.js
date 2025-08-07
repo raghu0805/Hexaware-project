@@ -63,6 +63,102 @@ app.get("/api/user", async (req, res) => {
   const result = await pool.query("SELECT * FROM user_details WHERE user_id = $1", [currentUserId]);
   res.json(result.rows);
 });
+
+app.get("/", async (req, res) => {
+  try {
+    // Step 1: Check if "Hexaware_Project" DB exists
+    const dbCheck = await defaultPool.query(
+      `SELECT 1 FROM pg_database WHERE datname = 'Hexaware_Project';`
+    );
+
+    if (dbCheck.rowCount === 0) {
+      await defaultPool.query(`CREATE DATABASE "Hexaware_Project";`);
+      console.log("✅ Created database: Hexaware_Project");
+    }
+
+    // Step 2: Connect to the Hexaware_Project DB
+    const pool = getHexawarePool();
+
+    // Step 3: Create tables if they don't exist
+    const createQueries = [
+      `CREATE TABLE IF NOT EXISTS user_details (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT,
+        email TEXT,
+        password TEXT,
+        phone TEXT,
+        resume_text TEXT,
+        consultant_status TEXT DEFAULT 'bench',
+        attendance TEXT,
+        skills TEXT,
+        embedding FLOAT8[],
+        no_oppurtunity INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS hr_details (
+        id SERIAL PRIMARY KEY,
+        email TEXT,
+        hr_password TEXT
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS project_details (
+        project_id TEXT PRIMARY KEY,
+        project_type TEXT,
+        duration_weeks INTEGER,
+        project_name TEXT NOT NULL UNIQUE,
+        start_date DATE,
+        end_date DATE,
+        project_status TEXT,
+        project_description TEXT
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS project_members (
+        id SERIAL PRIMARY KEY,
+        project_id TEXT REFERENCES project_details(project_id),
+        user_id TEXT REFERENCES user_details(user_id),
+        role TEXT NOT NULL
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS course_details (
+        id SERIAL PRIMARY KEY,
+        course_name TEXT NOT NULL,
+        course_url TEXT NOT NULL,
+        duration_weeks INTEGER NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS course_assignments (
+        course_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS attendance (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        date DATE NOT NULL,
+        time TIME NOT NULL,
+        status TEXT DEFAULT 'Present',
+        UNIQUE(user_id, date)
+      );`
+    ];
+
+    for (const query of createQueries) {
+      await pool.query(query);
+    }
+
+    res.status(200).send("✅ Database and tables are ready.");
+    console.log("Database and tables are ready")
+  } catch (error) {
+    console.error("❌ Error during setup:", error);
+    res.status(500).send("Error setting up database and tables.");
+  }
+});
 app.get("/api/userdetails/:id", async (req, res) => {
   const userId = req.params.id;
   try {
