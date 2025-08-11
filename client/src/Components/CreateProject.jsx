@@ -46,7 +46,7 @@ export default function CreateProject() {
       setTeamSize(newRoles.length);
       setSelectedMembers({});
     }
-  }, [projectType]);
+  }, [projectType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (duration > 0) {
@@ -74,7 +74,7 @@ export default function CreateProject() {
       skill.toLowerCase()
     );
     const normalizedSkills = consultant.skills
-      ?.replace(/[{}"\[\]]/g, "")
+      ?.replace(/[{}"\]]/g, "")
       .split(",")
       .map((s) => s.trim().toLowerCase());
     return requiredSkills.some((skill) => normalizedSkills?.includes(skill));

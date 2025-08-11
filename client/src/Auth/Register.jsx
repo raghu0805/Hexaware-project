@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Brain,
   User,
@@ -20,7 +20,6 @@ import { useNavigate } from 'react-router-dom';
 const Register = () => {
   const Role = localStorage.getItem("Role");
   console.log(Role)
-  const emailexist = localStorage.getItem("email");
   const navigate = useNavigate();
 
 

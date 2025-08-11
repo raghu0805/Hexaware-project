@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useUser() {
   const context = useContext(UserContext);
   if (context === null) {
@@ -10,7 +11,7 @@ export function useUser() {
   return context;
 }
 
-export function UserProvider({ children }) {
+function UserProvider({ children }) {
   const [userDetail, setUser] = useState(null);
 const [countDetail, setCountDetail] = useState({
   total: 0,
@@ -62,3 +63,5 @@ const [countDetail, setCountDetail] = useState({
     </UserContext.Provider>
   );
 }
+
+export default UserProvider;

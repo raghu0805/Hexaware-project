@@ -3,17 +3,12 @@ import { Search, Filter, Download, Users, Activity, AlertTriangle, TrendingUp,Lo
 import { useNavigate } from "react-router-dom";
 const AdminConsole = () => {
     // console.log("Total count:",countDetail)
-  const [activeTab, setActiveTab] = useState();
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [Projects,setAllProject]=useState([])
   const [Courses,setAllCourses]=useState([])
-  const [allConsultants, setAllConsultants] = useState([]);
   const [consultants, setConsultants] = useState([]);
-  const [activeConsultants, setActiveConsultants] = useState([]);
 
-  const [onBenchCount, setOnBenchCount] = useState(0);
-  const [trainingCount, setTrainingCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
 
@@ -28,11 +23,9 @@ const fetchAllConsultants = async () => {
   try {
     const res = await fetch("http://localhost:5000/consultants");
     const data = await res.json();
-    setAllConsultants(data.results || []);
     setConsultants(data.results || []); // 👈 This makes sure the table is populated
   } catch (err) {
     console.error("Failed to fetch all consultants:", err);
-    setAllConsultants([]);
     setConsultants([]);
   }
 
@@ -49,8 +42,7 @@ useEffect(() => {
     async function fetchAll() {
       try {
         const res = await fetch("http://localhost:5000/consultants");
-        const data = await res.json();
-        setAllConsultants(data.results || []);
+        await res.json(); // data is fetched but not used since setAllConsultants was removed
       } catch (err) {
         console.error("Failed to fetch all consultants:", err);
       }
@@ -89,7 +81,6 @@ useEffect(() => {
       const res = await fetch("http://localhost:5000/onbench");
       const data = await res.json();
       setConsultants(data.results || []);
-      setOnBenchCount(data.results.length);
     } catch (err) {
       console.error("Failed to fetch on-bench consultants:", err);
       setConsultants([]);
@@ -100,7 +91,6 @@ useEffect(() => {
       const res = await fetch("http://localhost:5000/training");
       const data = await res.json();
       setConsultants(data.results || []);
-      setTrainingCount(data.results.length);
     } catch (err) {
       console.error("Failed to fetch training consultants:", err);
       setConsultants([]);
@@ -112,11 +102,9 @@ useEffect(() => {
     try {
       const res = await fetch("http://localhost:5000/active");
       const data = await res.json();
-      setActiveConsultants(data.results || []);
       setConsultants(data.results || []);
     } catch (err) {
       console.error("Failed to fetch active consultants:", err);
-      setActiveConsultants([]);
       setConsultants([]);
     }
   };

@@ -1,23 +1,7 @@
 import React from 'react';
 import { CheckCircle, Clock, Circle } from 'lucide-react';
 
-const WorkflowProgress = ({ steps }) => {
-  const getStepIcon = (status) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="w-6 h-6 text-green-500" />;
-      case 'in-progress':
-        return <Clock className="w-6 h-6 text-yellow-500" />;
-      default:
-        return <Circle className="w-6 h-6 text-gray-300" />;
-    }
-  };
-
-  const getConnectorColor = (currentIndex) => {
-    if (currentIndex === steps.length - 1) return '';
-    return steps[currentIndex].status === 'completed' ? 'bg-green-500' : 'bg-gray-300';
-  };
-
+const WorkflowProgress = () => {
 //   const completedSteps = steps.filter((step) => step.status === 'completed').length;
 //   const progressPercentage = (completedSteps / steps.length) * 100;
 

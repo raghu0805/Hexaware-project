@@ -104,7 +104,7 @@ const ConsultantDashboard = () => {
        navigate("");
       }
       else console.log(data.error);
-    } catch (err) {
+    } catch {
       console.log("Error marking attendance");
     }
   }}

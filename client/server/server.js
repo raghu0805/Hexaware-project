@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { execFile } from 'child_process';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import searchRoutes from './routes/search.js'
@@ -66,20 +65,7 @@ app.get("/api/user", async (req, res) => {
 
 app.get("/", async (req, res) => {
   try {
-    // Step 1: Check if "Hexaware_Project" DB exists
-    const dbCheck = await defaultPool.query(
-      `SELECT 1 FROM pg_database WHERE datname = 'Hexaware_Project';`
-    );
-
-    if (dbCheck.rowCount === 0) {
-      await defaultPool.query(`CREATE DATABASE "Hexaware_Project";`);
-      console.log("✅ Created database: Hexaware_Project");
-    }
-
-    // Step 2: Connect to the Hexaware_Project DB
-    const pool = getHexawarePool();
-
-    // Step 3: Create tables if they don't exist
+    // Create tables if they don't exist
     const createQueries = [
       `CREATE TABLE IF NOT EXISTS user_details (
         id SERIAL PRIMARY KEY,
@@ -200,7 +186,7 @@ app.post("/upload", upload.single("resume"), (req, res) => {
   console.log("Resume path sent to Python:", resumePath); // ✅ Add this
 
 
-  execFile("python3", ["resumeProcessor.py", resumePath], async (error, stdout, stderr) => {
+  execFile("python3", ["resumeProcessor.py", resumePath], async (error, stdout) => {
     if (error) {
       console.error("Python Error:", error.message);
       return res.status(500).json({ error: "Processing failed" });
@@ -326,7 +312,7 @@ app.get("/consultants", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM user_details");
     res.json({ results: result.rows });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch consultants" });
   }
 });
@@ -334,7 +320,7 @@ app.get("/onbench", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM user_details WHERE consultant_status = 'bench'");
     res.json({ results: result.rows });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch on-bench consultants" });
   }
 });
@@ -533,7 +519,7 @@ app.get("/consultant-course/:user_id", async (req, res) => {
 });
 
 
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
