@@ -16,8 +16,6 @@ import AssignCourse from './Components/AssignCourse';
 
 
 function App() {
-  var isemailexist=localStorage.getItem("email")
-
   return (
     <Router>
       
